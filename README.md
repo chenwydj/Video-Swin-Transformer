@@ -1,3 +1,9 @@
+* SSV2 dataset: https://developer.qualcomm.com/software/ai-datasets/something-something
+* SSV2 git repo: https://github.com/willprice/20bn-something-something-label-hierarchies
+* MMACTION2: https://mmaction2.readthedocs.io/zh_CN/latest/supported_datasets.html#something-something-v2
+* MMCV: https://github.com/open-mmlab/mmcv
+
+
 # Video Swin Transformer
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/video-swin-transformer/action-classification-on-kinetics-400)](https://paperswithcode.com/sota/action-classification-on-kinetics-400?p=video-swin-transformer)
