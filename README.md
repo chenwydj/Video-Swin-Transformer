@@ -3,6 +3,10 @@
 * MMACTION2: https://mmaction2.readthedocs.io/zh_CN/latest/supported_datasets.html#something-something-v2
 * MMCV: https://github.com/open-mmlab/mmcv
 
+```bash
+/home/chenwy/Video-Swin-Transformer/mmaction2/data/sthv2 -> /ssd1/xinyu/dataset/ssv2
+```
+
 
 # Video Swin Transformer
 

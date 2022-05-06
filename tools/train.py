@@ -17,6 +17,8 @@ from mmaction.datasets import build_dataset
 from mmaction.models import build_model
 from mmaction.utils import collect_env, get_root_logger, register_module_hooks
 
+from pdb import set_trace as bp
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a recognizer')
@@ -184,6 +186,29 @@ def main():
             config=cfg.pretty_text)
 
     test_option = dict(test_last=args.test_last, test_best=args.test_best)
+
+    import loralib as lora
+    from torch import nn
+    LORA = False
+    FIX_WEIGHT = False
+    NC = True
+    # Lora
+    if LORA:
+        lora.mark_only_lora_as_trainable(model)
+    if not FIX_WEIGHT:
+        for name, module in model.backbone.layers[-1].blocks[-1].named_modules():
+            if hasattr(module, "weight"):
+                module.weight.requires_grad = True
+    # NC
+    if NC:
+        num_classes = cfg.model.cls_head.num_classes
+        weight = torch.sqrt(torch.tensor(num_classes/(num_classes-1)))*(torch.eye(num_classes)-(1/num_classes)*torch.ones((num_classes, num_classes)))
+        weight /= torch.sqrt((1/num_classes*torch.norm(weight, 'fro')**2))
+        model.cls_head.fc_cls.weight = nn.Parameter(torch.mm(weight, torch.eye(num_classes, cfg.model.cls_head.in_channels)))
+        model.cls_head.fc_cls.weight.requires_grad = False
+    else:
+        model.cls_head.fc_cls.weight.requires_grad = True
+
     train_model(
         model,
         datasets,

@@ -13,6 +13,11 @@ from functools import reduce, lru_cache
 from operator import mul
 from einops import rearrange
 
+import loralib as lora
+
+
+_R = 0
+
 
 class Mlp(nn.Module):
     """ Multilayer perceptron."""
@@ -21,9 +26,13 @@ class Mlp(nn.Module):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.fc1 = nn.Linear(in_features, hidden_features)
+        if _R >= 1:
+            self.fc1 = lora.Linear(in_features, hidden_features, r=_R)
+        else:
+            self.fc1 = nn.Linear(in_features, hidden_features)
         self.act = act_layer()
-        self.fc2 = nn.Linear(hidden_features, out_features)
+        # self.fc2 = nn.Linear(hidden_features, out_features)
+        self.fc2 = lora.Linear(hidden_features, out_features, r=_R)
         self.drop = nn.Dropout(drop)
 
     def forward(self, x):
@@ -127,9 +136,13 @@ class WindowAttention3D(nn.Module):
         relative_position_index = relative_coords.sum(-1)  # Wd*Wh*Ww, Wd*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
-        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        if _R >= 1:
+            self.qkv = lora.Linear(dim, dim * 3, bias=qkv_bias, r=_R)
+            self.proj = lora.Linear(dim, dim, r=_R)
+        else:
+            self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+            self.proj = nn.Linear(dim, dim)
         self.attn_drop = nn.Dropout(attn_drop)
-        self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
         trunc_normal_(self.relative_position_bias_table, std=.02)
@@ -621,9 +634,9 @@ class SwinTransformer3D(nn.Module):
                 Defaults to None.
         """
         def _init_weights(m):
-            if isinstance(m, nn.Linear):
+            if isinstance(m, nn.Linear) or isinstance(m, lora.Linear):
                 trunc_normal_(m.weight, std=.02)
-                if isinstance(m, nn.Linear) and m.bias is not None:
+                if (isinstance(m, nn.Linear) or isinstance(m, lora.Linear)) and m.bias is not None:
                     nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.LayerNorm):
                 nn.init.constant_(m.bias, 0)
